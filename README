@@ -1,0 +1,22 @@
+General Information
+===================
+
+Installation
+============
+
+In order to build helloworld you will need to have some development 
+tools installed on your machine. This is the list of packages that 
+you can get through apt (if using Debian based distro).
+
+build-essential
+
+=== Running Autotools ===
+
+First untar the package onto your local file system. Then from the 
+command line execute the normal Autotools commands from the directory 
+that you unpacked codeslayer.
+
+cd ~/codeslayer-x.x
+compile
+make
+sudo make install

@@ -1,0 +1,7 @@
+[plugin]
+lib=libfilesearchplugin
+name=File Search
+description=A plugin to search the files in the Projects side pane.
+authors=Jeff Johnston <jeff.johnston.mn@gmail.com>
+copyright=Copyright © 2011 Jeff Johnston
+website=http://codeslayer.org
