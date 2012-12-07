@@ -94,6 +94,7 @@ am__installdirs = "$(DESTDIR)$(libdir)"
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libfilesearchplugin_la_LIBADD =
 am_libfilesearchplugin_la_OBJECTS =  \
+	libfilesearchplugin_la-filesearch-dialog.lo \
 	libfilesearchplugin_la-filesearch-index.lo \
 	libfilesearchplugin_la-filesearch-menu.lo \
 	libfilesearchplugin_la-filesearch-engine.lo \
@@ -270,6 +271,8 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 lib_LTLIBRARIES = libfilesearchplugin.la
 libfilesearchplugin_la_SOURCES = \
+    filesearch-dialog.c \
+    filesearch-dialog.h \
     filesearch-index.c \
     filesearch-index.h \
     filesearch-menu.c \
@@ -356,6 +359,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libfilesearchplugin_la-filesearch-dialog.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libfilesearchplugin_la-filesearch-engine.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libfilesearchplugin_la-filesearch-index.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libfilesearchplugin_la-filesearch-menu.Plo@am__quote@
@@ -381,6 +385,13 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LTCOMPILE) -c -o $@ $<
+
+libfilesearchplugin_la-filesearch-dialog.lo: filesearch-dialog.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libfilesearchplugin_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libfilesearchplugin_la-filesearch-dialog.lo -MD -MP -MF $(DEPDIR)/libfilesearchplugin_la-filesearch-dialog.Tpo -c -o libfilesearchplugin_la-filesearch-dialog.lo `test -f 'filesearch-dialog.c' || echo '$(srcdir)/'`filesearch-dialog.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libfilesearchplugin_la-filesearch-dialog.Tpo $(DEPDIR)/libfilesearchplugin_la-filesearch-dialog.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='filesearch-dialog.c' object='libfilesearchplugin_la-filesearch-dialog.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libfilesearchplugin_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libfilesearchplugin_la-filesearch-dialog.lo `test -f 'filesearch-dialog.c' || echo '$(srcdir)/'`filesearch-dialog.c
 
 libfilesearchplugin_la-filesearch-index.lo: filesearch-index.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libfilesearchplugin_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libfilesearchplugin_la-filesearch-index.lo -MD -MP -MF $(DEPDIR)/libfilesearchplugin_la-filesearch-index.Tpo -c -o libfilesearchplugin_la-filesearch-index.lo `test -f 'filesearch-index.c' || echo '$(srcdir)/'`filesearch-index.c

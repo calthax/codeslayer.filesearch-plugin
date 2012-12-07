@@ -17,6 +17,7 @@
  */
 
 #include "filesearch-engine.h"
+#include "filesearch-dialog.h"
 #include "filesearch-index.h"
 
 typedef struct
@@ -31,7 +32,7 @@ static void file_search_engine_init        (FileSearchEngine      *engine);
 static void file_search_engine_finalize    (FileSearchEngine      *engine);
 
 static void index_files_action             (CodeSlayer            *codeslayer);
-static void search_files_action            (CodeSlayer            *codeslayer);
+/*static void search_files_action            (CodeSlayer            *codeslayer);*/
 
 static void execute                        (CodeSlayer            *codeslayer);
 static GList* get_indexes                  (CodeSlayer            *codeslayer, 
@@ -54,6 +55,7 @@ typedef struct _FileSearchEnginePrivate FileSearchEnginePrivate;
 struct _FileSearchEnginePrivate
 {
   CodeSlayer *codeslayer;
+  FileSearchDialog *dialog;
 };
 
 G_DEFINE_TYPE (FileSearchEngine, file_search_engine, G_TYPE_OBJECT)
@@ -74,6 +76,9 @@ file_search_engine_init (FileSearchEngine *engine)
 static void
 file_search_engine_finalize (FileSearchEngine *engine)
 {
+  FileSearchEnginePrivate *priv;
+  priv = FILE_SEARCH_ENGINE_GET_PRIVATE (engine);
+  g_object_unref (priv->dialog);
   G_OBJECT_CLASS (file_search_engine_parent_class)->finalize (G_OBJECT(engine));
 }
 
@@ -92,8 +97,10 @@ file_search_engine_new (CodeSlayer *codeslayer,
   g_signal_connect_swapped (G_OBJECT (menu), "index-files",
                             G_CALLBACK (index_files_action), codeslayer);
   
-  g_signal_connect_swapped (G_OBJECT (menu), "search-files",
-                            G_CALLBACK (search_files_action), codeslayer);
+  priv->dialog = file_search_dialog_new (codeslayer, menu);
+  
+  /*g_signal_connect_swapped (G_OBJECT (menu), "search-files",
+                            G_CALLBACK (search_files_action), codeslayer);*/
   
   g_signal_connect (G_OBJECT (codeslayer), "projects-changed",
                     G_CALLBACK (index_files_action), NULL);
@@ -107,11 +114,11 @@ index_files_action (CodeSlayer *codeslayer)
   g_thread_new ("index files", (GThreadFunc) execute, codeslayer); 
 }
 
-static void
+/*static void
 search_files_action (CodeSlayer *codeslayer)
 {
   g_print ("Search projects\n");
-}
+}*/
 
 static void
 execute (CodeSlayer *codeslayer)

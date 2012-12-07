@@ -44,17 +44,17 @@ struct _FileSearchIndexClass
 
 GType file_search_index_get_type (void) G_GNUC_CONST;
 
-FileSearchIndex* file_search_index_new              (void);
+FileSearchIndex*  file_search_index_new              (void);
 
-const gchar*     file_search_index_get_project_key  (FileSearchIndex *index);
-void             file_search_index_set_project_key  (FileSearchIndex *index,
-                                                     const gchar     *project_key);
-const gchar*     file_search_index_get_file_name    (FileSearchIndex *index);
-void             file_search_index_set_file_name    (FileSearchIndex *index,
-                                                     const gchar     *file_name);
-const gchar*     file_search_index_get_file_path    (FileSearchIndex *index);
-void             file_search_index_set_file_path    (FileSearchIndex *index,
-                                                     const gchar     *file_path);
+const gchar*      file_search_index_get_project_key  (FileSearchIndex *index);
+void              file_search_index_set_project_key  (FileSearchIndex *index,
+                                                      const gchar     *project_key);
+const gchar*      file_search_index_get_file_name    (FileSearchIndex *index);
+void              file_search_index_set_file_name    (FileSearchIndex *index,
+                                                      const gchar     *file_name);
+const gchar*      file_search_index_get_file_path    (FileSearchIndex *index);
+void              file_search_index_set_file_path    (FileSearchIndex *index,
+                                                      const gchar     *file_path);
 
 G_END_DECLS
 

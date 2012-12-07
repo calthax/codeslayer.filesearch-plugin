@@ -21,14 +21,14 @@
 static void file_search_index_class_init    (FileSearchIndexClass *klass);
 static void file_search_index_init          (FileSearchIndex      *index);
 static void file_search_index_finalize      (FileSearchIndex      *index);
-static void file_search_index_get_property  (GObject                *object, 
-                                             guint                   prop_id,
-                                             GValue                 *value,
-                                             GParamSpec             *pspec);
-static void file_search_index_set_property  (GObject                *object, 
-                                             guint                   prop_id,
-                                             const GValue           *value,
-                                             GParamSpec             *pspec);
+static void file_search_index_get_property  (GObject              *object, 
+                                             guint                 prop_id,
+                                             GValue               *value,
+                                             GParamSpec           *pspec);
+static void file_search_index_set_property  (GObject              *object, 
+                                             guint                 prop_id,
+                                             const GValue         *value,
+                                             GParamSpec           *pspec);
 
 #define FILE_SEARCH_INDEX_GET_PRIVATE(obj) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((obj), FILE_SEARCH_INDEX_TYPE, FileSearchIndexPrivate))
@@ -229,7 +229,7 @@ file_search_index_get_file_path (FileSearchIndex *index)
 
 void
 file_search_index_set_file_path (FileSearchIndex *index,
-                                 const gchar       *file_path)
+                                 const gchar     *file_path)
 {
   FileSearchIndexPrivate *priv;
   priv = FILE_SEARCH_INDEX_GET_PRIVATE (index);

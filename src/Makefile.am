@@ -1,6 +1,8 @@
 lib_LTLIBRARIES = libfilesearchplugin.la
 
 libfilesearchplugin_la_SOURCES = \
+    filesearch-dialog.c \
+    filesearch-dialog.h \
     filesearch-index.c \
     filesearch-index.h \
     filesearch-menu.c \
