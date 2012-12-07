@@ -16,15 +16,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include <codeslayer/codeslayer-utils.h>
 #include "filesearch-engine.h"
-
-typedef struct
-{
-  gchar *file_name;
-  gchar *file_path;
-  gchar *project_key;
-} Index;
+#include "filesearch-index.h"
 
 typedef struct
 {
@@ -37,25 +30,21 @@ static void file_search_engine_class_init  (FileSearchEngineClass *klass);
 static void file_search_engine_init        (FileSearchEngine      *engine);
 static void file_search_engine_finalize    (FileSearchEngine      *engine);
 
-static void index_files_action         (CodeSlayer         *codeslayer);
-static void search_files_action        (CodeSlayer         *codeslayer);
+static void index_files_action             (CodeSlayer            *codeslayer);
+static void search_files_action            (CodeSlayer            *codeslayer);
 
-static void execute                    (CodeSlayer         *codeslayer);
-static GList* get_indexes              (CodeSlayer         *codeslayer, 
-                                        CodeSlayerGroup    *group);
-static void get_project_indexes        (CodeSlayerProject  *project, 
-                                        GFile              *file, 
-                                        GList              **indexes);
-static Index* create_index             (CodeSlayerProject  *project, 
-                                        GFile              *file,
-                                        const char         *file_name);
-static void free_index                 (Index              *index);
-static void write_indexes              (CodeSlayer         *codeslayer, 
-                                        GIOChannel         *channel,
-                                        GList              *indexes);                                        
-static gboolean start_process          (Process            *process);
-static gboolean stop_process           (Process            *process);
-static void destroy_process            (Process            *process);
+static void execute                        (CodeSlayer            *codeslayer);
+static GList* get_indexes                  (CodeSlayer            *codeslayer, 
+                                            CodeSlayerGroup       *group);
+static void get_project_indexes            (CodeSlayerProject     *project, 
+                                            GFile                 *file, 
+                                            GList                 **indexes);
+static void write_indexes                  (CodeSlayer            *codeslayer, 
+                                            GIOChannel            *channel,
+                                            GList                 *indexes);                                        
+static gboolean start_process              (Process               *process);
+static gboolean stop_process               (Process               *process);
+static void destroy_process                (Process               *process);
                             
 #define FILE_SEARCH_ENGINE_GET_PRIVATE(obj) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((obj), FILE_SEARCH_ENGINE_TYPE, FileSearchEnginePrivate))
@@ -90,7 +79,7 @@ file_search_engine_finalize (FileSearchEngine *engine)
 
 FileSearchEngine*
 file_search_engine_new (CodeSlayer *codeslayer, 
-                    GtkWidget  *menu)
+                        GtkWidget  *menu)
 {
   FileSearchEnginePrivate *priv;
   FileSearchEngine *engine;
@@ -144,12 +133,12 @@ execute (CodeSlayer *codeslayer)
   group = codeslayer_get_active_group (codeslayer);
 
   group_folder_path = codeslayer_get_active_group_folder_path (codeslayer);
-  group_indexes_file = g_strconcat (group_folder_path, G_DIR_SEPARATOR_S, "indexes", NULL);
+  group_indexes_file = g_strconcat (group_folder_path, G_DIR_SEPARATOR_S, "filesearch-indexes", NULL);
   
   channel = g_io_channel_new_file (group_indexes_file, "w", &error);
   if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_EXISTS))
     {
-      g_warning ("Error creating indexes file: %s\n", error->message);
+      g_warning ("Error creating file search file: %s\n", error->message);
       g_error_free (error);
     }
 
@@ -158,7 +147,7 @@ execute (CodeSlayer *codeslayer)
     {
       write_indexes (codeslayer, channel, indexes);
       g_io_channel_shutdown (channel, TRUE, NULL);
-      g_list_foreach (indexes, (GFunc) free_index, NULL);
+      g_list_foreach (indexes, (GFunc) g_object_unref, NULL);
       g_list_free (indexes);
       g_io_channel_unref (channel);
     }
@@ -227,8 +216,11 @@ get_project_indexes (CodeSlayerProject *project,
             }
           else
             {
-              Index *index;
-              index = create_index (project, child, file_name);
+              FileSearchIndex *index;
+              index = file_search_index_new ();
+              file_search_index_set_project_key (index, codeslayer_project_get_key (project));
+              file_search_index_set_file_name (index, file_name);
+              file_search_index_set_file_path (index, g_file_get_path (child));              
               *indexes = g_list_prepend (*indexes, index);
             }
 
@@ -239,28 +231,6 @@ get_project_indexes (CodeSlayerProject *project,
     }
 }
 
-static Index*
-create_index (CodeSlayerProject *project, 
-              GFile             *file,
-              const char        *file_name)
-{
-  Index *index;
-  index = g_malloc (sizeof (Index));
-  index->file_path = g_file_get_path (file);
-  index->file_name = g_strdup (file_name);
-  index->project_key = g_strdup (codeslayer_project_get_key (project));
-  return index;
-}
-
-static void
-free_index (Index *index)
-{
-  g_free (index->file_path);
-  g_free (index->file_name);
-  g_free (index->project_key);
-  g_free (index);
-}
-
 static void
 write_indexes (CodeSlayer *codeslayer,
                GIOChannel *channel, 
@@ -268,19 +238,21 @@ write_indexes (CodeSlayer *codeslayer,
 {
   while (indexes != NULL)
     {
-      Index *index = indexes->data;
+      FileSearchIndex *index = indexes->data;
       GIOStatus status;
       gchar *line;
       
-      line = g_strdup_printf ("%s\t%s\t%s\n", index->file_path, 
-                              index->file_name, index->project_key);
+      line = g_strdup_printf ("%s\t%s\t%s\n", 
+                              file_search_index_get_file_name (index), 
+                              file_search_index_get_file_path (index), 
+                              file_search_index_get_project_key (index));
 
       status = g_io_channel_write_chars (channel, line, -1, NULL, NULL);
       
       g_free (line);
       
       if (status != G_IO_STATUS_NORMAL)
-        g_warning ("Error writing to indexes file.");
+        g_warning ("Error writing to file search file.");
 
       indexes = g_list_next (indexes);
     }

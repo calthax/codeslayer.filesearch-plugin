@@ -23,11 +23,11 @@ static void file_search_menu_class_init (FileSearchMenuClass *klass);
 static void file_search_menu_init       (FileSearchMenu      *menu);
 static void file_search_menu_finalize   (FileSearchMenu      *menu);
 
-static void add_menu_items          (FileSearchMenu      *menu,
-                                     GtkWidget        *submenu,
-                                     GtkAccelGroup    *accel_group);
-static void index_files_action      (FileSearchMenu      *menu);
-static void search_files_action     (FileSearchMenu      *menu);
+static void add_menu_items              (FileSearchMenu      *menu,
+                                         GtkWidget           *submenu,
+                                         GtkAccelGroup       *accel_group);
+static void index_files_action          (FileSearchMenu      *menu);
+static void search_files_action         (FileSearchMenu      *menu);
                                         
 enum
 {
@@ -91,9 +91,9 @@ file_search_menu_new (GtkAccelGroup *accel_group)
 }
 
 static void
-add_menu_items (FileSearchMenu   *menu,
-                GtkWidget     *submenu,
-                GtkAccelGroup *accel_group)
+add_menu_items (FileSearchMenu *menu,
+                GtkWidget      *submenu,
+                GtkAccelGroup  *accel_group)
 {
   GtkWidget *index_files_item;
   GtkWidget *search_files_item;

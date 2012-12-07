@@ -46,7 +46,7 @@ struct _FileSearchEngineClass
 GType file_search_engine_get_type (void) G_GNUC_CONST;
 
 FileSearchEngine*  file_search_engine_new  (CodeSlayer *codeslayer, 
-                                     GtkWidget  *menu);
+                                            GtkWidget  *menu);
 
 G_END_DECLS
 
