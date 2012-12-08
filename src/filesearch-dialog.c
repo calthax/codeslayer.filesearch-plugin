@@ -31,7 +31,7 @@ static void run_dialog                     (FileSearchDialog      *dialog);
 static gboolean key_release_action         (FileSearchDialog      *dialog,
                                             GdkEventKey           *event);
 static GList* get_indexes                  (FileSearchDialog      *dialog, 
-                                            gchar                 *input);
+                                            const gchar           *input);
 static FileSearchIndex* get_index          (gchar                 *line);
 static void render_indexes                 (FileSearchDialog      *dialog, 
                                             GList                 *indexes);
@@ -40,7 +40,9 @@ static void row_activated_action           (FileSearchDialog      *dialog,
                                             GtkTreeViewColumn     *column);
 static gboolean filter_callback            (GtkTreeModel          *model,
                                             GtkTreeIter           *iter,
-                                            FileSearchDialog      *dialog);                                     
+                                            FileSearchDialog      *dialog);
+static gboolean contains_text              (const gchar           *value, 
+                                            const gchar           *text);
 
 #define FILE_SEARCH_DIALOG_GET_PRIVATE(obj) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((obj), FILE_SEARCH_DIALOG_TYPE, FileSearchDialogPrivate))
@@ -230,37 +232,39 @@ key_release_action (FileSearchDialog *dialog,
     {
       gtk_list_store_clear (priv->store);
     }
-  else if (text_length > 1 && 
-           gtk_tree_model_iter_n_children (GTK_TREE_MODEL (priv->filter), NULL))
+  else if (text_length >= 2) 
     {
-      gtk_tree_model_filter_refilter (GTK_TREE_MODEL_FILTER (priv->filter));
-    }
-  else
-    {
-      gchar *input;
-      GList *indexes;
-      const gchar *text;
-      
-      gtk_list_store_clear (priv->store);
+      if (gtk_tree_model_iter_n_children (GTK_TREE_MODEL (priv->filter), NULL) > 0)
+        {
+          gtk_tree_model_filter_refilter (GTK_TREE_MODEL_FILTER (priv->filter));
+        }
+      else
+        {
+          gchar *input;
+          GList *indexes;
+          const gchar *text;
+          
+          gtk_list_store_clear (priv->store);
 
-      text = gtk_entry_get_text (GTK_ENTRY (priv->entry));
+          text = gtk_entry_get_text (GTK_ENTRY (priv->entry));
 
-      indexes = get_indexes (dialog, text);
-      
-      if (indexes != NULL)
-        {        
-          render_indexes (dialog, indexes);
-          g_list_foreach (indexes, (GFunc) g_object_unref, NULL);
-          g_list_free (indexes);
-        }      
+          indexes = get_indexes (dialog, text);
+          
+          if (indexes != NULL)
+            {        
+              render_indexes (dialog, indexes);
+              g_list_foreach (indexes, (GFunc) g_object_unref, NULL);
+              g_list_free (indexes);
+            }      
+        }
     }
-  
+
   return FALSE;
 }
 
 static GList*
 get_indexes (FileSearchDialog *dialog, 
-             gchar            *text)
+             const gchar      *text)
 {
   FileSearchDialogPrivate *priv;
   GList *results = NULL;
@@ -290,11 +294,11 @@ get_indexes (FileSearchDialog *dialog,
   
   while (g_io_channel_read_line (channel, &line, &len, NULL, &error) != G_IO_STATUS_EOF)
     {
-      if (g_str_has_prefix (line, text))
+      if (contains_text (line, text))
         {
           FileSearchIndex *index = get_index (line);
           results = g_list_prepend (results, index);                  
-        }        
+        }
       g_free (line);
     }
     
@@ -367,9 +371,9 @@ render_indexes (FileSearchDialog *dialog,
 }
 
 static gboolean
-filter_callback (GtkTreeModel *model,
-                 GtkTreeIter  *iter,
-                 FileSearchDialog   *dialog)
+filter_callback (GtkTreeModel     *model,
+                 GtkTreeIter      *iter,
+                 FileSearchDialog *dialog)
 {  
   FileSearchDialogPrivate *priv;
   const gchar *text = NULL;
@@ -378,19 +382,43 @@ filter_callback (GtkTreeModel *model,
   priv = FILE_SEARCH_DIALOG_GET_PRIVATE (dialog);
   
   text = gtk_entry_get_text (GTK_ENTRY (priv->entry));
+
+  if (text == NULL)
+    return FALSE;
+  
   gtk_tree_model_get (model, iter, FILE_NAME, &value, -1);
   
-  if (text == NULL || value == NULL)
+  if (value == NULL)
     return FALSE;
 
-  if (g_str_has_prefix (value, text))
-    return TRUE;
+  if (contains_text (value, text))
+    {
+      g_free (value);    
+      return TRUE;
+    }
 
+  g_free (value);
+  
   return FALSE;
-}                 
+}
+
+static gboolean
+contains_text (const gchar *value, 
+               const gchar *text)
+{
+  gchar *result;    
+  result = g_strstr_len (value, -1, text);
+
+  if (result != NULL)
+    {
+      return TRUE;
+    }
+  
+  return FALSE;
+}              
 
 static void
-row_activated_action (FileSearchDialog        *dialog,
+row_activated_action (FileSearchDialog  *dialog,
                       GtkTreePath       *path,
                       GtkTreeViewColumn *column)
 {

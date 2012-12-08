@@ -32,14 +32,14 @@ static void file_search_engine_init        (FileSearchEngine      *engine);
 static void file_search_engine_finalize    (FileSearchEngine      *engine);
 
 static void index_files_action             (CodeSlayer            *codeslayer);
-/*static void search_files_action            (CodeSlayer            *codeslayer);*/
-
 static void execute                        (CodeSlayer            *codeslayer);
 static GList* get_indexes                  (CodeSlayer            *codeslayer, 
                                             CodeSlayerGroup       *group);
 static void get_project_indexes            (CodeSlayerProject     *project, 
                                             GFile                 *file, 
-                                            GList                 **indexes);
+                                            GList                 **indexes, 
+                                            GList                 *exclude_types,
+                                            GList                 *exclude_dirs);
 static void write_indexes                  (CodeSlayer            *codeslayer, 
                                             GIOChannel            *channel,
                                             GList                 *indexes);                                        
@@ -99,9 +99,6 @@ file_search_engine_new (CodeSlayer *codeslayer,
   
   priv->dialog = file_search_dialog_new (codeslayer, menu);
   
-  /*g_signal_connect_swapped (G_OBJECT (menu), "search-files",
-                            G_CALLBACK (search_files_action), codeslayer);*/
-  
   g_signal_connect (G_OBJECT (codeslayer), "projects-changed",
                     G_CALLBACK (index_files_action), NULL);
 
@@ -113,12 +110,6 @@ index_files_action (CodeSlayer *codeslayer)
 {
   g_thread_new ("index files", (GThreadFunc) execute, codeslayer); 
 }
-
-/*static void
-search_files_action (CodeSlayer *codeslayer)
-{
-  g_print ("Search projects\n");
-}*/
 
 static void
 execute (CodeSlayer *codeslayer)
@@ -172,6 +163,21 @@ get_indexes (CodeSlayer      *codeslayer,
   GList *results = NULL;
   GList *projects;
   
+  CodeSlayerPreferences *preferences;
+  gchar *exclude_types_str;
+  gchar *exclude_dirs_str;
+  GList *exclude_types = NULL;
+  GList *exclude_dirs = NULL;
+  
+  preferences = codeslayer_get_preferences (codeslayer);
+  
+  exclude_types_str = codeslayer_preferences_get_string (preferences,
+                                                          CODESLAYER_PREFERENCES_PROJECTS_EXCLUDE_TYPES);
+  exclude_dirs_str = codeslayer_preferences_get_string (preferences,
+                                                        CODESLAYER_PREFERENCES_PROJECTS_EXCLUDE_DIRS);
+  exclude_types = codeslayer_utils_string_to_list (exclude_types_str);
+  exclude_dirs = codeslayer_utils_string_to_list (exclude_dirs_str);
+  
   projects = codeslayer_group_get_projects (group);
   while (projects != NULL)
     {
@@ -183,7 +189,7 @@ get_indexes (CodeSlayer      *codeslayer,
       folder_path = codeslayer_project_get_folder_path (project);
       file = g_file_new_for_path (folder_path);
       
-      get_project_indexes (project, file, &indexes);
+      get_project_indexes (project, file, &indexes, exclude_types, exclude_dirs);
       if (indexes != NULL)
         results = g_list_concat (results, indexes);
         
@@ -192,13 +198,28 @@ get_indexes (CodeSlayer      *codeslayer,
       projects = g_list_next (projects);
     }
     
+  g_free (exclude_types_str);
+  g_free (exclude_dirs_str);
+  if (exclude_types)
+    {
+      g_list_foreach (exclude_types, (GFunc) g_free, NULL);
+      g_list_free (exclude_types);
+    }
+  if (exclude_dirs)
+    {
+      g_list_foreach (exclude_dirs, (GFunc) g_free, NULL);
+      g_list_free (exclude_dirs);
+    }    
+    
   return results;    
 }
 
 static void
 get_project_indexes (CodeSlayerProject *project, 
                      GFile             *file,
-                     GList             **indexes)
+                     GList             **indexes, 
+                     GList             *exclude_types,
+                     GList             *exclude_dirs)
 {
   GFileEnumerator *enumerator;
   
@@ -219,7 +240,8 @@ get_project_indexes (CodeSlayerProject *project,
 
           if (g_file_info_get_file_type (file_info) == G_FILE_TYPE_DIRECTORY)
             {
-              get_project_indexes (project, child, indexes);            
+              if (!codeslayer_utils_contains_element (exclude_dirs, file_name))
+                get_project_indexes (project, child, indexes, exclude_types, exclude_dirs);            
             }
           else
             {
