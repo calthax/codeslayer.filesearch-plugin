@@ -30,19 +30,20 @@ static void search_action                  (FileSearchDialog      *dialog);
 static void run_dialog                     (FileSearchDialog      *dialog);
 static gboolean key_release_action         (FileSearchDialog      *dialog,
                                             GdkEventKey           *event);
-static GList* get_indexes                  (FileSearchDialog      *dialog, 
-                                            const gchar           *input);
+static gboolean key_press_action           (FileSearchDialog      *dialog,
+                                            GdkEventKey           *event);
+static GList* get_indexes                  (FileSearchDialog      *dialog);
 static FileSearchIndex* get_index          (gchar                 *line);
 static void render_indexes                 (FileSearchDialog      *dialog, 
                                             GList                 *indexes);
-static void row_activated_action           (FileSearchDialog      *dialog,
-                                            GtkTreePath           *path,
-                                            GtkTreeViewColumn     *column);
+static void select_tree                    (FileSearchDialog      *dialog, 
+                                            GdkEventKey           *event);
+static void row_activated_action           (FileSearchDialog      *dialog);
 static gboolean filter_callback            (GtkTreeModel          *model,
                                             GtkTreeIter           *iter,
                                             FileSearchDialog      *dialog);
-static gboolean contains_text              (const gchar           *value, 
-                                            const gchar           *text);
+static gchar* get_globbing                 (const gchar           *entry, 
+                                            gboolean               match_case);
 
 #define FILE_SEARCH_DIALOG_GET_PRIVATE(obj) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((obj), FILE_SEARCH_DIALOG_TYPE, FileSearchDialogPrivate))
@@ -56,7 +57,8 @@ struct _FileSearchDialogPrivate
   GtkWidget    *entry;
   GtkWidget    *tree;
   GtkListStore *store;
-  GtkTreeModel *filter;  
+  GtkTreeModel *filter;
+  GPatternSpec *find_pattern; 
 };
 
 enum
@@ -83,6 +85,7 @@ file_search_dialog_init (FileSearchDialog *dialog)
   priv = FILE_SEARCH_DIALOG_GET_PRIVATE (dialog);
   priv->dialog = NULL;
   priv->filter = NULL;
+  priv->find_pattern = NULL;
 }
 
 static void
@@ -93,6 +96,9 @@ file_search_dialog_finalize (FileSearchDialog *dialog)
   
   if (priv->dialog != NULL)
     gtk_widget_destroy (priv->dialog);
+
+  if (priv->find_pattern != NULL)
+    g_pattern_spec_free (priv->find_pattern);
 
   G_OBJECT_CLASS (file_search_dialog_parent_class)-> finalize (G_OBJECT (dialog));
 }
@@ -125,7 +131,7 @@ run_dialog (FileSearchDialog *dialog)
 {
   FileSearchDialogPrivate *priv;
   priv = FILE_SEARCH_DIALOG_GET_PRIVATE (dialog);
-  
+
   if (priv->dialog == NULL)
     {
       GtkWidget *content_area;
@@ -198,6 +204,9 @@ run_dialog (FileSearchDialog *dialog)
       g_signal_connect_swapped (G_OBJECT (priv->entry), "key-release-event",
                                 G_CALLBACK (key_release_action), dialog);
                                 
+      g_signal_connect_swapped (G_OBJECT (priv->entry), "key-press-event",
+                                G_CALLBACK (key_press_action), dialog);
+                                
       g_signal_connect_swapped (G_OBJECT (priv->tree), "row-activated",
                                 G_CALLBACK (row_activated_action), dialog);                                
       
@@ -218,6 +227,24 @@ run_dialog (FileSearchDialog *dialog)
 }
 
 static gboolean
+key_press_action (FileSearchDialog *dialog,
+                  GdkEventKey      *event)
+{
+  if (event->keyval == GDK_KEY_Up || event->keyval == GDK_KEY_Down)
+    {
+      select_tree (dialog, event);    
+      return TRUE;    
+    }
+  if (event->keyval == GDK_KEY_Return)
+    {
+      row_activated_action (dialog);
+      return TRUE;    
+    }
+    
+  return FALSE;
+}
+
+static gboolean
 key_release_action (FileSearchDialog *dialog,
                     GdkEventKey      *event)
 {
@@ -226,29 +253,39 @@ key_release_action (FileSearchDialog *dialog,
   
   priv = FILE_SEARCH_DIALOG_GET_PRIVATE (dialog);
   
+  if (event->keyval == GDK_KEY_Up || event->keyval == GDK_KEY_Down)
+    return FALSE;
+
   text_length = gtk_entry_get_text_length (GTK_ENTRY (priv->entry));
   
   if (text_length == 0)
     {
       gtk_list_store_clear (priv->store);
     }
-  else if (text_length >= 2) 
+  else if (text_length >= 1) 
     {
+      const gchar *text;
+      gchar *find_globbing = NULL;
+      text = gtk_entry_get_text (GTK_ENTRY (priv->entry));
+      find_globbing = get_globbing (text, TRUE);
+      
+      if (priv->find_pattern != NULL)
+        g_pattern_spec_free (priv->find_pattern);
+      
+      priv->find_pattern = g_pattern_spec_new (find_globbing);
+      g_free (find_globbing);
+
       if (gtk_tree_model_iter_n_children (GTK_TREE_MODEL (priv->filter), NULL) > 0)
         {
           gtk_tree_model_filter_refilter (GTK_TREE_MODEL_FILTER (priv->filter));
         }
       else
         {
-          gchar *input;
           GList *indexes;
-          const gchar *text;
           
           gtk_list_store_clear (priv->store);
 
-          text = gtk_entry_get_text (GTK_ENTRY (priv->entry));
-
-          indexes = get_indexes (dialog, text);
+          indexes = get_indexes (dialog);
           
           if (indexes != NULL)
             {        
@@ -263,42 +300,45 @@ key_release_action (FileSearchDialog *dialog,
 }
 
 static GList*
-get_indexes (FileSearchDialog *dialog, 
-             const gchar      *text)
+get_indexes (FileSearchDialog *dialog)
 {
   FileSearchDialogPrivate *priv;
   GList *results = NULL;
 
-  GIOChannel *channel;
-  GError *error = NULL;
+  GIOChannel *channel = NULL;
   gchar *line;
   gsize len;
 
-  CodeSlayerGroup *group;
   gchar *group_folder_path;
   gchar *group_indexes_file;
   
   priv = FILE_SEARCH_DIALOG_GET_PRIVATE (dialog);
 
-  group = codeslayer_get_active_group (priv->codeslayer);
-
   group_folder_path = codeslayer_get_active_group_folder_path (priv->codeslayer);
   group_indexes_file = g_strconcat (group_folder_path, G_DIR_SEPARATOR_S, "filesearch", NULL);
   
-  channel = g_io_channel_new_file (group_indexes_file, "r", &error);
-  if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_EXISTS))
+  channel = g_io_channel_new_file (group_indexes_file, "r", NULL);
+  if (channel == NULL)
     {
-      g_warning ("Error reading file search file: %s\n", error->message);
-      g_error_free (error);
+      GtkWidget *dialog;
+      dialog =  gtk_message_dialog_new (NULL, 
+                                        GTK_DIALOG_MODAL,
+                                        GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
+                                        "The search file does not exist. First index the files in the tools menu.");
+      gtk_dialog_run (GTK_DIALOG (dialog));
+      gtk_widget_destroy (dialog);
+      g_free (group_folder_path);
+      g_free (group_indexes_file);
+      return NULL;
     }
   
-  while (g_io_channel_read_line (channel, &line, &len, NULL, &error) != G_IO_STATUS_EOF)
+  while (g_io_channel_read_line (channel, &line, &len, NULL, NULL) != G_IO_STATUS_EOF)
     {
-      if (contains_text (line, text))
-        {
-          FileSearchIndex *index = get_index (line);
-          results = g_list_prepend (results, index);                  
-        }
+      FileSearchIndex *index = get_index (line);
+      if (g_pattern_match_string (priv->find_pattern, file_search_index_get_file_name (index)))
+        results = g_list_prepend (results, index);
+      else
+        g_object_unref (index);
       g_free (line);
     }
     
@@ -376,14 +416,11 @@ filter_callback (GtkTreeModel     *model,
                  FileSearchDialog *dialog)
 {  
   FileSearchDialogPrivate *priv;
-  const gchar *text = NULL;
   gchar *value = NULL;
 
   priv = FILE_SEARCH_DIALOG_GET_PRIVATE (dialog);
   
-  text = gtk_entry_get_text (GTK_ENTRY (priv->entry));
-
-  if (text == NULL)
+  if (priv->find_pattern == NULL)
     return FALSE;
   
   gtk_tree_model_get (model, iter, FILE_NAME, &value, -1);
@@ -391,7 +428,7 @@ filter_callback (GtkTreeModel     *model,
   if (value == NULL)
     return FALSE;
 
-  if (contains_text (value, text))
+  if (g_pattern_match_string (priv->find_pattern, value))
     {
       g_free (value);    
       return TRUE;
@@ -402,25 +439,71 @@ filter_callback (GtkTreeModel     *model,
   return FALSE;
 }
 
-static gboolean
-contains_text (const gchar *value, 
-               const gchar *text)
+static gchar*
+get_globbing (const gchar *entry, 
+              gboolean     match_case)
 {
-  gchar *result;    
-  result = g_strstr_len (value, -1, text);
-
-  if (result != NULL)
+  gchar *entry_text;
+  gchar *result;
+  
+  entry_text = g_strconcat ("*", entry, "*", NULL);
+  
+  if (match_case)
     {
-      return TRUE;
+      result = entry_text;
+    }
+  else
+    {
+      result = codeslayer_utils_to_lowercase (entry_text);
+      g_free (entry_text);
     }
   
-  return FALSE;
-}              
+  return result;
+}
 
 static void
-row_activated_action (FileSearchDialog  *dialog,
-                      GtkTreePath       *path,
-                      GtkTreeViewColumn *column)
+select_tree (FileSearchDialog *dialog, 
+             GdkEventKey      *event)
+{
+  FileSearchDialogPrivate *priv;
+  GtkTreeSelection *selection;
+  GtkTreeIter iter;
+  
+  priv = FILE_SEARCH_DIALOG_GET_PRIVATE (dialog);
+  
+  if (gtk_tree_model_iter_n_children (GTK_TREE_MODEL (priv->filter), NULL) <= 0)
+    return;  
+
+  selection = gtk_tree_view_get_selection (GTK_TREE_VIEW (priv->tree));
+  
+  if (gtk_tree_selection_get_selected (selection, &priv->filter, &iter))
+    {
+      if (event->keyval == GDK_KEY_Up)
+        {
+          GtkTreePath *path;
+          path = gtk_tree_model_get_path (GTK_TREE_MODEL (priv->filter), &iter);
+          if (gtk_tree_path_prev (path))
+            {
+              gtk_tree_model_get_iter (GTK_TREE_MODEL (priv->filter), &iter, path);
+              gtk_tree_selection_select_iter (selection, &iter);
+            }
+          gtk_tree_path_free (path);
+        }
+      else if (event->keyval == GDK_KEY_Down)
+        {
+          if (gtk_tree_model_iter_next (GTK_TREE_MODEL (priv->filter), &iter))
+            gtk_tree_selection_select_iter (selection, &iter);
+        }
+    }
+  else
+    {
+      if (gtk_tree_model_get_iter_first (GTK_TREE_MODEL (priv->filter), &iter))
+        gtk_tree_selection_select_iter (selection, &iter);
+    }
+}
+
+static void
+row_activated_action (FileSearchDialog  *dialog)
 {
   FileSearchDialogPrivate *priv;
   GtkTreeSelection *tree_selection;

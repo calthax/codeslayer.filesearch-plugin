@@ -245,12 +245,21 @@ get_project_indexes (CodeSlayerProject *project,
             }
           else
             {
-              FileSearchIndex *index;
-              index = file_search_index_new ();
-              file_search_index_set_project_key (index, codeslayer_project_get_key (project));
-              file_search_index_set_file_name (index, file_name);
-              file_search_index_set_file_path (index, g_file_get_path (child));              
-              *indexes = g_list_prepend (*indexes, index);
+              if (!codeslayer_utils_contains_element_with_suffix (exclude_types, file_name))
+                {
+                  FileSearchIndex *index;
+                  gchar *file_path;
+                  file_path = g_file_get_path (child);
+                  
+                  index = file_search_index_new ();
+                  file_search_index_set_project_key (index, codeslayer_project_get_key (project));
+                  file_search_index_set_file_name (index, file_name);
+                  file_search_index_set_file_path (index, file_path);
+                  
+                  g_free (file_path);
+                  
+                  *indexes = g_list_prepend (*indexes, index);
+                }
             }
 
           g_object_unref(child);
