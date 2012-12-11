@@ -446,7 +446,7 @@ get_globbing (const gchar *entry,
   gchar *entry_text;
   gchar *result;
   
-  entry_text = g_strconcat ("*", entry, "*", NULL);
+  entry_text = g_strconcat (entry, "*", NULL);
   
   if (match_case)
     {

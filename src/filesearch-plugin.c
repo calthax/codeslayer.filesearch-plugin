@@ -46,6 +46,6 @@ activate (CodeSlayer *codeslayer)
 G_MODULE_EXPORT void 
 deactivate (CodeSlayer *codeslayer)
 {
+  codeslayer_remove_from_menubar (codeslayer, GTK_MENU_ITEM (menu));
   g_object_unref (engine);
-  g_object_unref (menu);
 }
