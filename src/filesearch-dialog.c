@@ -44,6 +44,10 @@ static gboolean filter_callback            (GtkTreeModel          *model,
                                             FileSearchDialog      *dialog);
 static gchar* get_globbing                 (const gchar           *entry, 
                                             gboolean               match_case);
+static gint sort_compare                   (GtkTreeModel            *model, 
+                                            GtkTreeIter             *a,
+                                            GtkTreeIter             *b, 
+                                            gpointer                 userdata);
 
 #define FILE_SEARCH_DIALOG_GET_PRIVATE(obj) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((obj), FILE_SEARCH_DIALOG_TYPE, FileSearchDialogPrivate))
@@ -138,6 +142,7 @@ run_dialog (FileSearchDialog *dialog)
       GtkWidget *vbox;
       GtkWidget *hbox;
       GtkWidget *label;
+      GtkTreeSortable *sortable;
       GtkWidget *scrolled_window;
       GtkTreeViewColumn *column;
       GtkCellRenderer *renderer;
@@ -178,7 +183,12 @@ run_dialog (FileSearchDialog *dialog)
                                                dialog, NULL);
       
       gtk_tree_view_set_model (GTK_TREE_VIEW (priv->tree), GTK_TREE_MODEL (priv->filter));
-      g_object_unref (priv->store);      
+      g_object_unref (priv->store);
+      
+      sortable = GTK_TREE_SORTABLE (priv->store);
+      gtk_tree_sortable_set_sort_func (sortable, FILE_NAME, sort_compare,
+                                       GINT_TO_POINTER (FILE_NAME), NULL);
+      gtk_tree_sortable_set_sort_column_id (sortable, FILE_NAME, GTK_SORT_ASCENDING);
 
       column = gtk_tree_view_column_new ();
       gtk_tree_view_column_set_sizing (column, GTK_TREE_VIEW_COLUMN_AUTOSIZE);
@@ -548,3 +558,34 @@ row_activated_action (FileSearchDialog  *dialog)
 
   g_list_free (selected_rows);
 }                     
+
+gint
+sort_compare (GtkTreeModel *model, 
+              GtkTreeIter  *a,
+              GtkTreeIter  *b, 
+              gpointer      userdata)
+{
+  gint sortcol;
+  gint ret = 0;
+
+  sortcol = GPOINTER_TO_INT (userdata);
+  
+  switch (sortcol)
+    {
+    case FILE_NAME:
+      {
+        gchar *text1, *text2;
+
+        gtk_tree_model_get (model, a, FILE_NAME, &text1, -1);
+        gtk_tree_model_get (model, b, FILE_NAME, &text2, -1);
+
+        ret = g_strcmp0 (text1, text2);
+
+        g_free (text1);
+        g_free (text2);
+      }
+      break;
+    }
+
+  return ret;
+}
