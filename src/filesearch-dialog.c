@@ -478,21 +478,24 @@ select_tree (FileSearchDialog *dialog,
   
   if (gtk_tree_selection_get_selected (selection, &priv->filter, &iter))
     {
+      GtkTreePath *path;
+      path = gtk_tree_model_get_path (GTK_TREE_MODEL (priv->filter), &iter);
+
       if (event->keyval == GDK_KEY_Up)
+        gtk_tree_path_prev (path);
+      else if (event->keyval == GDK_KEY_Down)
+        gtk_tree_path_next (path);
+
+      if (path != NULL)
         {
-          GtkTreePath *path;
-          path = gtk_tree_model_get_path (GTK_TREE_MODEL (priv->filter), &iter);
-          if (gtk_tree_path_prev (path))
+          if (gtk_tree_model_get_iter (GTK_TREE_MODEL (priv->filter), &iter, path))
             {
-              gtk_tree_model_get_iter (GTK_TREE_MODEL (priv->filter), &iter, path);
               gtk_tree_selection_select_iter (selection, &iter);
+              gtk_tree_view_scroll_to_cell (GTK_TREE_VIEW (priv->tree), path, 
+                                            NULL, FALSE, 0.0, 0.0);
+            
             }
           gtk_tree_path_free (path);
-        }
-      else if (event->keyval == GDK_KEY_Down)
-        {
-          if (gtk_tree_model_iter_next (GTK_TREE_MODEL (priv->filter), &iter))
-            gtk_tree_selection_select_iter (selection, &iter);
         }
     }
   else
