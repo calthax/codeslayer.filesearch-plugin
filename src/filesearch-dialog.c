@@ -62,6 +62,7 @@ struct _FileSearchDialogPrivate
   GtkWidget    *tree;
   GtkListStore *store;
   GtkTreeModel *filter;
+  gchar        *find_globbing;
   GPatternSpec *find_pattern; 
 };
 
@@ -89,6 +90,7 @@ file_search_dialog_init (FileSearchDialog *dialog)
   priv = FILE_SEARCH_DIALOG_GET_PRIVATE (dialog);
   priv->dialog = NULL;
   priv->filter = NULL;
+  priv->find_globbing = NULL;
   priv->find_pattern = NULL;
 }
 
@@ -103,6 +105,9 @@ file_search_dialog_finalize (FileSearchDialog *dialog)
 
   if (priv->find_pattern != NULL)
     g_pattern_spec_free (priv->find_pattern);
+
+  if (priv->find_globbing != NULL)
+    g_free (priv->find_globbing);
 
   G_OBJECT_CLASS (file_search_dialog_parent_class)-> finalize (G_OBJECT (dialog));
 }
@@ -263,7 +268,10 @@ key_release_action (FileSearchDialog *dialog,
   
   priv = FILE_SEARCH_DIALOG_GET_PRIVATE (dialog);
   
-  if (event->keyval == GDK_KEY_Up || event->keyval == GDK_KEY_Down)
+  if (event->keyval == GDK_KEY_Up ||
+      event->keyval == GDK_KEY_Down ||
+      event->keyval == GDK_KEY_Left ||
+      event->keyval == GDK_KEY_Right)
     return FALSE;
 
   text_length = gtk_entry_get_text_length (GTK_ENTRY (priv->entry));
@@ -275,17 +283,25 @@ key_release_action (FileSearchDialog *dialog,
   else if (text_length >= 1) 
     {
       const gchar *text;
-      gchar *find_globbing = NULL;
+      gboolean first_char_changed = FALSE;
+      
       text = gtk_entry_get_text (GTK_ENTRY (priv->entry));
-      find_globbing = get_globbing (text, TRUE);
+      
+      if (priv->find_globbing != NULL)
+        {
+          first_char_changed = text == priv->find_globbing;
+          g_free (priv->find_globbing);
+        }
+
+      priv->find_globbing = get_globbing (text, TRUE);
       
       if (priv->find_pattern != NULL)
         g_pattern_spec_free (priv->find_pattern);
       
-      priv->find_pattern = g_pattern_spec_new (find_globbing);
-      g_free (find_globbing);
+      priv->find_pattern = g_pattern_spec_new (priv->find_globbing);
 
-      if (gtk_tree_model_iter_n_children (GTK_TREE_MODEL (priv->filter), NULL) > 0)
+      if (!first_char_changed && 
+          gtk_tree_model_iter_n_children (GTK_TREE_MODEL (priv->filter), NULL) > 0)
         {
           gtk_tree_model_filter_refilter (GTK_TREE_MODEL_FILTER (priv->filter));
         }
