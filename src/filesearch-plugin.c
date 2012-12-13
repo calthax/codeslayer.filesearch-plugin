@@ -41,6 +41,8 @@ activate (CodeSlayer *codeslayer)
   engine = file_search_engine_new (codeslayer, menu);  
   
   codeslayer_add_to_menubar (codeslayer, GTK_MENU_ITEM (menu));
+  
+  file_search_engine_index_files (engine);
 }
 
 G_MODULE_EXPORT void 

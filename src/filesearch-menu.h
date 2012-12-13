@@ -41,7 +41,6 @@ struct _FileSearchMenuClass
 {
   GtkMenuItemClass parent_class;
 
-  void (*index_files) (FileSearchMenu *menu);
   void (*search_files) (FileSearchMenu *menu);
 };
 

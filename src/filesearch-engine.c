@@ -31,7 +31,6 @@ static void file_search_engine_class_init  (FileSearchEngineClass *klass);
 static void file_search_engine_init        (FileSearchEngine      *engine);
 static void file_search_engine_finalize    (FileSearchEngine      *engine);
 
-static void index_files_action             (CodeSlayer            *codeslayer);
 static void execute                        (CodeSlayer            *codeslayer);
 static GList* get_indexes                  (CodeSlayer            *codeslayer, 
                                             CodeSlayerGroup       *group);
@@ -94,21 +93,20 @@ file_search_engine_new (CodeSlayer *codeslayer,
 
   priv->codeslayer = codeslayer;
   
-  g_signal_connect_swapped (G_OBJECT (menu), "index-files",
-                            G_CALLBACK (index_files_action), codeslayer);
-  
   priv->dialog = file_search_dialog_new (codeslayer, menu);
   
-  g_signal_connect (G_OBJECT (codeslayer), "projects-changed",
-                    G_CALLBACK (index_files_action), NULL);
+  g_signal_connect_swapped (G_OBJECT (codeslayer), "projects-changed",
+                            G_CALLBACK (file_search_engine_index_files), engine);
 
   return engine;
 }
 
-static void
-index_files_action (CodeSlayer *codeslayer)
+void
+file_search_engine_index_files (FileSearchEngine *engine)
 {
-  g_thread_new ("index files", (GThreadFunc) execute, codeslayer); 
+  FileSearchEnginePrivate *priv;
+  priv = FILE_SEARCH_ENGINE_GET_PRIVATE (engine);
+  g_thread_new ("index files", (GThreadFunc) execute, priv->codeslayer); 
 }
 
 static void
