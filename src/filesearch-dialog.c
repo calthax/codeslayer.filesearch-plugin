@@ -108,13 +108,13 @@ file_search_dialog_finalize (FileSearchDialog *dialog)
 
   if (priv->find_globbing != NULL)
     g_free (priv->find_globbing);
-
+  
   G_OBJECT_CLASS (file_search_dialog_parent_class)-> finalize (G_OBJECT (dialog));
 }
 
 FileSearchDialog*
 file_search_dialog_new (CodeSlayer *codeslayer,
-                 GtkWidget  *menu)
+                        GtkWidget  *menu)
 {
   FileSearchDialogPrivate *priv;
   FileSearchDialog *dialog;
