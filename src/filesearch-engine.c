@@ -55,6 +55,7 @@ struct _FileSearchEnginePrivate
 {
   CodeSlayer *codeslayer;
   FileSearchDialog *dialog;
+  gulong projects_changed_id;
 };
 
 G_DEFINE_TYPE (FileSearchEngine, file_search_engine, G_TYPE_OBJECT)
@@ -78,6 +79,7 @@ file_search_engine_finalize (FileSearchEngine *engine)
   FileSearchEnginePrivate *priv;
   priv = FILE_SEARCH_ENGINE_GET_PRIVATE (engine);
   g_object_unref (priv->dialog);
+  g_signal_handler_disconnect (priv->codeslayer, priv->projects_changed_id);
   G_OBJECT_CLASS (file_search_engine_parent_class)->finalize (G_OBJECT(engine));
 }
 
@@ -95,8 +97,8 @@ file_search_engine_new (CodeSlayer *codeslayer,
   
   priv->dialog = file_search_dialog_new (codeslayer, menu);
   
-  g_signal_connect_swapped (G_OBJECT (codeslayer), "projects-changed",
-                            G_CALLBACK (file_search_engine_index_files), engine);
+  priv->projects_changed_id = g_signal_connect_swapped (G_OBJECT (codeslayer), "projects-changed",
+                                                        G_CALLBACK (file_search_engine_index_files), engine);
 
   return engine;
 }
