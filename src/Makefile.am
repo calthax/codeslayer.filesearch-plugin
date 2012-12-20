@@ -1,6 +1,6 @@
-lib_LTLIBRARIES = libfilesearchplugin.la
+lib_LTLIBRARIES = libfilesearchcodeslayerplugin.la
 
-libfilesearchplugin_la_SOURCES = \
+libfilesearchcodeslayerplugin_la_SOURCES = \
     filesearch-dialog.c \
     filesearch-dialog.h \
     filesearch-index.c \
@@ -11,4 +11,4 @@ libfilesearchplugin_la_SOURCES = \
     filesearch-engine.h \
     filesearch-plugin.c
 
-libfilesearchplugin_la_CPPFLAGS = $(INDEXERPLUGIN_CFLAGS) -I$(top_srcdir) -I$(srcdir)
+libfilesearchcodeslayerplugin_la_CPPFLAGS = $(FILESEARCHCODESLAYERPLUGIN_CFLAGS) -I$(top_srcdir) -I$(srcdir)
