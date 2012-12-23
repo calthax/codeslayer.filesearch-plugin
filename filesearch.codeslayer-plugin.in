@@ -1,5 +1,6 @@
 [plugin]
 lib=libfilesearchplugin
+version=@PACKAGE_VERSION@
 name=File Search
 description=A plugin to search the files in the Projects side pane.
 authors=Jeff Johnston <jeff.johnston.mn@gmail.com>
