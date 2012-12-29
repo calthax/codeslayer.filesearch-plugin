@@ -340,7 +340,7 @@ get_indexes (FileSearchDialog *dialog)
   
   priv = FILE_SEARCH_DIALOG_GET_PRIVATE (dialog);
 
-  group_folder_path = codeslayer_get_active_group_folder_path (priv->codeslayer);
+  group_folder_path = codeslayer_get_group_config_folder_path (priv->codeslayer);
   group_indexes_file = g_strconcat (group_folder_path, G_DIR_SEPARATOR_S, "filesearch", NULL);
   
   channel = g_io_channel_new_file (group_indexes_file, "r", NULL);

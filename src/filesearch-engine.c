@@ -128,9 +128,9 @@ execute (CodeSlayer *codeslayer)
 
   g_idle_add ((GSourceFunc) start_process, process);
 
-  group = codeslayer_get_active_group (codeslayer);
+  group = codeslayer_get_group (codeslayer);
 
-  group_folder_path = codeslayer_get_active_group_folder_path (codeslayer);
+  group_folder_path = codeslayer_get_group_config_folder_path (codeslayer);
   group_indexes_file = g_strconcat (group_folder_path, G_DIR_SEPARATOR_S, "filesearch", NULL);
   
   channel = g_io_channel_new_file (group_indexes_file, "w", &error);
