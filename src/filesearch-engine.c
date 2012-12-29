@@ -252,7 +252,6 @@ get_project_indexes (CodeSlayerProject *project,
                   file_path = g_file_get_path (child);
                   
                   index = file_search_index_new ();
-                  file_search_index_set_project_key (index, codeslayer_project_get_key (project));
                   file_search_index_set_file_name (index, file_name);
                   file_search_index_set_file_path (index, file_path);
                   

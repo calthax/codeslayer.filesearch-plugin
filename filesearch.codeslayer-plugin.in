@@ -1,5 +1,5 @@
 [plugin]
-lib=libfilesearchplugin
+lib=libfilesearchcodeslayerplugin
 version=@PACKAGE_VERSION@
 name=File Search
 description=A plugin to search the files in the Projects side pane.
