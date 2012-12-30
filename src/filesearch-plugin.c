@@ -35,12 +35,12 @@ activate (CodeSlayer *codeslayer)
 {
   GtkAccelGroup *accel_group;
 
-  accel_group = codeslayer_get_menubar_accel_group (codeslayer);
+  accel_group = codeslayer_get_menu_bar_accel_group (codeslayer);
 
   menu = file_search_menu_new (accel_group);
   engine = file_search_engine_new (codeslayer, menu);  
   
-  codeslayer_add_to_menubar (codeslayer, GTK_MENU_ITEM (menu));
+  codeslayer_add_to_menu_bar (codeslayer, GTK_MENU_ITEM (menu));
   
   file_search_engine_index_files (engine);
 }
@@ -48,6 +48,6 @@ activate (CodeSlayer *codeslayer)
 G_MODULE_EXPORT void 
 deactivate (CodeSlayer *codeslayer)
 {
-  codeslayer_remove_from_menubar (codeslayer, GTK_MENU_ITEM (menu));
+  codeslayer_remove_from_menu_bar (codeslayer, GTK_MENU_ITEM (menu));
   g_object_unref (engine);
 }
