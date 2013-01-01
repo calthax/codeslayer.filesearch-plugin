@@ -551,23 +551,15 @@ row_activated_action (FileSearchDialog  *dialog)
   if (tmp != NULL)
     {
       GtkTreeIter treeiter;
-      CodeSlayerProject *project;
-      CodeSlayerDocument *document;
       gchar *file_path; 
       GtkTreePath *tree_path = tmp->data;
       
       gtk_tree_model_get_iter (tree_model, &treeiter, tree_path);
       gtk_tree_model_get (GTK_TREE_MODEL (priv->filter), &treeiter, FILE_PATH, &file_path, -1);
       
-      document = codeslayer_document_new ();
-      project = codeslayer_get_project_by_file_path (priv->codeslayer, file_path);
-      codeslayer_document_set_file_path (document, file_path);
-      codeslayer_document_set_project (document, project);
-      
-      codeslayer_select_editor (priv->codeslayer, document);
+      codeslayer_select_editor_by_file_path (priv->codeslayer, file_path, 0);
       gtk_widget_hide (priv->dialog);
       
-      g_object_unref (document);
       g_free (file_path);
       gtk_tree_path_free (tree_path);
     }
