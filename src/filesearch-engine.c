@@ -163,18 +163,18 @@ get_indexes (CodeSlayer      *codeslayer,
   GList *results = NULL;
   GList *projects;
   
-  CodeSlayerPreferences *preferences;
+  CodeSlayerRegistry *registry;
   gchar *exclude_types_str;
   gchar *exclude_dirs_str;
   GList *exclude_types = NULL;
   GList *exclude_dirs = NULL;
   
-  preferences = codeslayer_get_preferences (codeslayer);
+  registry = codeslayer_get_registry (codeslayer);
   
-  exclude_types_str = codeslayer_preferences_get_string (preferences,
-                                                          CODESLAYER_PREFERENCES_PROJECTS_EXCLUDE_TYPES);
-  exclude_dirs_str = codeslayer_preferences_get_string (preferences,
-                                                        CODESLAYER_PREFERENCES_PROJECTS_EXCLUDE_DIRS);
+  exclude_types_str = codeslayer_registry_get_string (registry,
+                                                      CODESLAYER_REGISTRY_PROJECTS_EXCLUDE_TYPES);
+  exclude_dirs_str = codeslayer_registry_get_string (registry,
+                                                     CODESLAYER_REGISTRY_PROJECTS_EXCLUDE_DIRS);
   exclude_types = codeslayer_utils_string_to_list (exclude_types_str);
   exclude_dirs = codeslayer_utils_string_to_list (exclude_dirs_str);
   
