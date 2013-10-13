@@ -32,8 +32,7 @@ static void file_search_engine_init        (FileSearchEngine      *engine);
 static void file_search_engine_finalize    (FileSearchEngine      *engine);
 
 static void execute                        (CodeSlayer            *codeslayer);
-static GList* get_indexes                  (CodeSlayer            *codeslayer, 
-                                            CodeSlayerGroup       *group);
+static GList* get_indexes                  (CodeSlayer            *codeslayer);
 static void get_project_indexes            (CodeSlayerProject     *project, 
                                             GFile                 *file, 
                                             GList                 **indexes, 
@@ -115,9 +114,8 @@ static void
 execute (CodeSlayer *codeslayer)
 {
   GList *indexes;
-  CodeSlayerGroup *group;
-  gchar *group_folder_path;
-  gchar *group_indexes_file;
+  gchar *profile_folder_path;
+  gchar *profile_indexes_file;
   GIOChannel *channel;
   GError *error = NULL;
   Process *process;
@@ -128,19 +126,17 @@ execute (CodeSlayer *codeslayer)
 
   g_idle_add ((GSourceFunc) start_process, process);
 
-  group = codeslayer_get_group (codeslayer);
-
-  group_folder_path = codeslayer_get_group_config_folder_path (codeslayer);
-  group_indexes_file = g_strconcat (group_folder_path, G_DIR_SEPARATOR_S, "filesearch", NULL);
+  profile_folder_path = codeslayer_get_profile_config_folder_path (codeslayer);
+  profile_indexes_file = g_strconcat (profile_folder_path, G_DIR_SEPARATOR_S, "filesearch", NULL);
   
-  channel = g_io_channel_new_file (group_indexes_file, "w", &error);
+  channel = g_io_channel_new_file (profile_indexes_file, "w", &error);
   if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_EXISTS))
     {
       g_warning ("Error creating file search file: %s\n", error->message);
       g_error_free (error);
     }
 
-  indexes = get_indexes (codeslayer, group);
+  indexes = get_indexes (codeslayer);
   if (indexes != NULL)
     {
       write_indexes (codeslayer, channel, indexes);
@@ -150,15 +146,14 @@ execute (CodeSlayer *codeslayer)
       g_io_channel_unref (channel);
     }
     
-  g_free (group_folder_path);
-  g_free (group_indexes_file);
+  g_free (profile_folder_path);
+  g_free (profile_indexes_file);
   
   g_idle_add_full (G_PRIORITY_DEFAULT_IDLE, (GSourceFunc) stop_process, process, (GDestroyNotify) destroy_process);
 }
 
 static GList*
-get_indexes (CodeSlayer      *codeslayer, 
-             CodeSlayerGroup *group)
+get_indexes (CodeSlayer *codeslayer)
 {
   GList *results = NULL;
   GList *projects;
@@ -178,7 +173,7 @@ get_indexes (CodeSlayer      *codeslayer,
   exclude_types = codeslayer_utils_string_to_list (exclude_types_str);
   exclude_dirs = codeslayer_utils_string_to_list (exclude_dirs_str);
   
-  projects = codeslayer_group_get_projects (group);
+  projects = codeslayer_get_projects (codeslayer);
   while (projects != NULL)
     {
       CodeSlayerProject *project = projects->data;

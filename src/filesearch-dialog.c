@@ -335,15 +335,15 @@ get_indexes (FileSearchDialog *dialog)
   gchar *line;
   gsize len;
 
-  gchar *group_folder_path;
-  gchar *group_indexes_file;
+  gchar *profile_folder_path;
+  gchar *profile_indexes_file;
   
   priv = FILE_SEARCH_DIALOG_GET_PRIVATE (dialog);
 
-  group_folder_path = codeslayer_get_group_config_folder_path (priv->codeslayer);
-  group_indexes_file = g_strconcat (group_folder_path, G_DIR_SEPARATOR_S, "filesearch", NULL);
+  profile_folder_path = codeslayer_get_profile_config_folder_path (priv->codeslayer);
+  profile_indexes_file = g_strconcat (profile_folder_path, G_DIR_SEPARATOR_S, "filesearch", NULL);
   
-  channel = g_io_channel_new_file (group_indexes_file, "r", NULL);
+  channel = g_io_channel_new_file (profile_indexes_file, "r", NULL);
   if (channel == NULL)
     {
       GtkWidget *dialog;
@@ -353,8 +353,8 @@ get_indexes (FileSearchDialog *dialog)
                                         "The search file does not exist. First index the files in the tools menu.");
       gtk_dialog_run (GTK_DIALOG (dialog));
       gtk_widget_destroy (dialog);
-      g_free (group_folder_path);
-      g_free (group_indexes_file);
+      g_free (profile_folder_path);
+      g_free (profile_indexes_file);
       return NULL;
     }
   
@@ -368,8 +368,8 @@ get_indexes (FileSearchDialog *dialog)
       g_free (line);
     }
     
-  g_free (group_folder_path);
-  g_free (group_indexes_file);
+  g_free (profile_folder_path);
+  g_free (profile_indexes_file);
   
   return results;
 }
