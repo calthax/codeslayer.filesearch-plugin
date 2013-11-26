@@ -557,7 +557,7 @@ row_activated_action (FileSearchDialog  *dialog)
       gtk_tree_model_get_iter (tree_model, &treeiter, tree_path);
       gtk_tree_model_get (GTK_TREE_MODEL (priv->filter), &treeiter, FILE_PATH, &file_path, -1);
       
-      codeslayer_select_editor_by_file_path (priv->codeslayer, file_path, 0);
+      codeslayer_select_document_by_file_path (priv->codeslayer, file_path, 0);
       gtk_widget_hide (priv->dialog);
       
       g_free (file_path);
