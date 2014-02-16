@@ -20,13 +20,6 @@
 #include "filesearch-dialog.h"
 #include "filesearch-index.h"
 
-typedef struct
-{
-  CodeSlayer *codeslayer;
-  gint        id;  
-  gchar      *text;
-} Process;
-
 static void file_search_engine_class_init  (FileSearchEngineClass *klass);
 static void file_search_engine_init        (FileSearchEngine      *engine);
 static void file_search_engine_finalize    (FileSearchEngine      *engine);
@@ -41,9 +34,6 @@ static void get_project_indexes            (CodeSlayerProject     *project,
 static void write_indexes                  (CodeSlayer            *codeslayer, 
                                             GIOChannel            *channel,
                                             GList                 *indexes);                                        
-static gboolean start_process              (Process               *process);
-static gboolean stop_process               (Process               *process);
-static void destroy_process                (Process               *process);
                             
 #define FILE_SEARCH_ENGINE_GET_PRIVATE(obj) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((obj), FILE_SEARCH_ENGINE_TYPE, FileSearchEnginePrivate))
@@ -118,13 +108,6 @@ execute (CodeSlayer *codeslayer)
   gchar *profile_indexes_file;
   GIOChannel *channel;
   GError *error = NULL;
-  Process *process;
-
-  process = g_malloc (sizeof (Process));
-  process->codeslayer = codeslayer;
-  process->text = g_strdup (_("Index Files..."));
-
-  g_idle_add ((GSourceFunc) start_process, process);
 
   profile_folder_path = codeslayer_get_profile_config_folder_path (codeslayer);
   profile_indexes_file = g_strconcat (profile_folder_path, G_DIR_SEPARATOR_S, "filesearch", NULL);
@@ -148,8 +131,6 @@ execute (CodeSlayer *codeslayer)
     
   g_free (profile_folder_path);
   g_free (profile_indexes_file);
-  
-  g_idle_add_full (G_PRIORITY_DEFAULT_IDLE, (GSourceFunc) stop_process, process, (GDestroyNotify) destroy_process);
 }
 
 static GList*
@@ -290,27 +271,4 @@ write_indexes (CodeSlayer *codeslayer,
     }
     
   g_io_channel_flush (channel, NULL);
-}
-
-static gboolean 
-start_process (Process *process)
-{
-  gint id;
-  id = codeslayer_add_to_process_bar (process->codeslayer, process->text, NULL, NULL);
-  process->id = id;
-  return FALSE;
-}
-
-static gboolean 
-stop_process (Process *process)
-{
-  codeslayer_remove_from_process_bar (process->codeslayer, process->id);
-  return FALSE;
-}
-
-static void 
-destroy_process (Process *process)
-{
-  g_free (process->text);
-  g_free (process);
 }
